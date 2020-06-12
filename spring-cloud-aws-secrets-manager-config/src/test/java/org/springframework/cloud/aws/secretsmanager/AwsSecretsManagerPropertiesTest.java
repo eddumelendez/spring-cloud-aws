@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.aws.secretsmanager;
 
-import java.util.HashMap;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -31,64 +29,77 @@ import org.springframework.validation.Errors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for AwsSecretsManagerProperties
+ * Tests for {@link AwsSecretsManagerProperties}.
+ *
  * @author Matej Nedic
- **/
+ * @author Maciej Walkowiak
+ */
 public class AwsSecretsManagerPropertiesTest {
 
-	private static final HashMap<ErrorCode, String> ERROR_CODES = new HashMap() {
-		{
-			put(ErrorCode.PREF_NULL, "prefix should not be empty or null.");
-			put(ErrorCode.PREF_PATTERN_WRONG,
-					"The prefix must have pattern of:  (/[a-zA-Z0-9.\\-_]+)*");
-			put(ErrorCode.DC_NULL, "defaultContext should not be empty or null.");
-			put(ErrorCode.PS_NULL, "profileSeparator should not be empty or null.");
-			put(ErrorCode.PS_PATTERN_WRONG,
-					"The profileSeparator must have pattern of:  [a-zA-Z0-9.\\-_]+");
-		}
-	};
-
-	@ParameterizedTest
-	@MethodSource("provideCase")
-	public void awsSecretsManagerProperties_ValidationFails(String prefix, String defaultContext, String profileSeparator,
-			String message) {
-		AwsSecretsManagerProperties properties = buildAwsParamStoreProperties(prefix,
-				defaultContext, profileSeparator);
-		Errors errors = new BeanPropertyBindingResult(properties, "properties");
-		properties.validate(properties, errors);
-		assertThat(errors.getAllErrors().stream().filter(error -> Objects
-			.equals(error.getDefaultMessage(), message)).findAny()).isNotEmpty();
-	}
-
 	@Test
-	void awsSecretsManagerProperties_ValidationSucceeds() {
-		AwsSecretsManagerProperties properties = buildAwsParamStoreProperties("/sec", "app", "_");
+	void validationSucceeds() {
+		AwsSecretsManagerProperties properties = new AwsSecretsManagerPropertiesBuilder()
+				.withPrefix("/sec").withDefaultContext("app").withProfileSeparator("_")
+				.build();
 		Errors errors = new BeanPropertyBindingResult(properties, "properties");
 		properties.validate(properties, errors);
 		assertThat(errors.getAllErrors()).isEmpty();
 	}
 
-	private static Stream<Arguments> provideCase() {
+	@ParameterizedTest
+	@MethodSource("invalidProperties")
+	public void validationFails(AwsSecretsManagerProperties properties, String field,
+			String errorCode) {
+		Errors errors = new BeanPropertyBindingResult(properties, "properties");
+
+		properties.validate(properties, errors);
+
+		assertThat(errors.getFieldError(field)).isNotNull();
+		assertThat(errors.getFieldError(field).getCode()).isEqualTo(errorCode);
+	}
+
+	private static Stream<Arguments> invalidProperties() {
 		return Stream.of(
-				Arguments.of("", "application", "_", ERROR_CODES.get(ErrorCode.PREF_NULL)),
-				Arguments.of("!.", "application", "_",
-						ERROR_CODES.get(ErrorCode.PREF_PATTERN_WRONG)),
-				Arguments.of("/secret", "", "_", ERROR_CODES.get(ErrorCode.DC_NULL)),
-				Arguments.of("/secret", "application", "", ERROR_CODES.get(ErrorCode.PS_NULL)),
-				Arguments.of("/secret", "application", "!_",
-						ERROR_CODES.get(ErrorCode.PS_PATTERN_WRONG)));
+				Arguments.of(
+						new AwsSecretsManagerPropertiesBuilder().withPrefix("").build(),
+						"prefix", "NotEmpty"),
+				Arguments.of(
+						new AwsSecretsManagerPropertiesBuilder().withPrefix("!.").build(),
+						"prefix", "Pattern"),
+				Arguments.of(new AwsSecretsManagerPropertiesBuilder()
+						.withDefaultContext("").build(), "defaultContext", "NotEmpty"),
+				Arguments.of(new AwsSecretsManagerPropertiesBuilder()
+						.withProfileSeparator("").build(), "profileSeparator",
+						"NotEmpty"),
+				Arguments.of(
+						new AwsSecretsManagerPropertiesBuilder()
+								.withProfileSeparator("!_").build(),
+						"profileSeparator", "Pattern"));
 	}
 
-	private static AwsSecretsManagerProperties buildAwsParamStoreProperties(String prefix,
-			String defaultContext, String profileSeparator) {
-		AwsSecretsManagerProperties awsSecretsManagerProperties = new AwsSecretsManagerProperties();
-		awsSecretsManagerProperties.setPrefix(prefix);
-		awsSecretsManagerProperties.setDefaultContext(defaultContext);
-		awsSecretsManagerProperties.setProfileSeparator(profileSeparator);
-		return awsSecretsManagerProperties;
+	private static class AwsSecretsManagerPropertiesBuilder {
+
+		private final AwsSecretsManagerProperties properties = new AwsSecretsManagerProperties();
+
+		AwsSecretsManagerPropertiesBuilder withPrefix(String prefix) {
+			this.properties.setPrefix(prefix);
+			return this;
+		}
+
+		AwsSecretsManagerPropertiesBuilder withDefaultContext(String defaultContext) {
+			this.properties.setDefaultContext(defaultContext);
+			return this;
+		}
+
+		AwsSecretsManagerPropertiesBuilder withProfileSeparator(String profileSeparator) {
+			this.properties.setProfileSeparator(profileSeparator);
+			return this;
+		}
+
+		AwsSecretsManagerProperties build() {
+			return this.properties;
+		}
+
 	}
 
-	private enum ErrorCode {
-		PREF_NULL, PREF_PATTERN_WRONG, DC_NULL, PS_NULL, PS_PATTERN_WRONG
-	}
 }

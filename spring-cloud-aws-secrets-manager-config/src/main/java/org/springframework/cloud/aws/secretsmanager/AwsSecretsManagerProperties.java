@@ -23,7 +23,6 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
-
 /**
  * Configuration properties for the AWS Secrets Manager integration. Mostly based on the
  * Spring Cloud Consul Configuration equivalent.
@@ -41,15 +40,16 @@ public class AwsSecretsManagerProperties implements Validator {
 	public static final String CONFIG_PREFIX = "aws.secretsmanager";
 
 	/**
-	 * Pattern used for checking prefix validity.
+	 * Pattern used for prefix validation.
 	 */
-	private static final Pattern PREFIX_PATTERN = Pattern.compile("(/[a-zA-Z0-9.\\-_]+)*");
+	private static final Pattern PREFIX_PATTERN = Pattern
+			.compile("(/[a-zA-Z0-9.\\-_]+)*");
 
 	/**
-	 * Pattern used for checking profileSeparator validity.
+	 * Pattern used for profileSeparator validation.
 	 */
 	private static final Pattern PROFILE_SEPARATOR_PATTERN = Pattern
-		.compile("[a-zA-Z0-9.\\-_]+");
+			.compile("[a-zA-Z0-9.\\-_]+");
 
 	/**
 	 * Prefix indicating first level for every property. Value must start with a forward
@@ -80,26 +80,24 @@ public class AwsSecretsManagerProperties implements Validator {
 
 	@Override
 	public void validate(Object target, Errors errors) {
-		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "prefix", "field.required",
-			"prefix should not be empty or null.");
-		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "defaultContext",
-			"field.required",
-			"defaultContext should not be empty or null.");
-		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "profileSeparator",
-			"field.required",
-			"profileSeparator should not be empty or null.");
+		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "prefix", "NotEmpty",
+				"prefix should not be empty or null.");
+		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "defaultContext", "NotEmpty",
+				"defaultContext should not be empty or null.");
+		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "profileSeparator", "NotEmpty",
+				"profileSeparator should not be empty or null.");
 
 		AwsSecretsManagerProperties awsSecretsManagerProperties = (AwsSecretsManagerProperties) target;
 
 		if (!PREFIX_PATTERN.matcher(awsSecretsManagerProperties.getPrefix()).matches()) {
-			errors.rejectValue("prefix", "prefix.pattern.wrong",
-				"The prefix must have pattern of:  " + PREFIX_PATTERN.toString());
+			errors.rejectValue("prefix", "Pattern",
+					"The prefix must have pattern of:  " + PREFIX_PATTERN.toString());
 		}
 		if (!PROFILE_SEPARATOR_PATTERN
-			.matcher(awsSecretsManagerProperties.getProfileSeparator()).matches()) {
-			errors.rejectValue("profileSeparator", "separator.pattern.wrong",
-				"The profileSeparator must have pattern of:  "
-					+ PROFILE_SEPARATOR_PATTERN.toString());
+				.matcher(awsSecretsManagerProperties.getProfileSeparator()).matches()) {
+			errors.rejectValue("profileSeparator", "Pattern",
+					"The profileSeparator must have pattern of:  "
+							+ PROFILE_SEPARATOR_PATTERN.toString());
 		}
 	}
 

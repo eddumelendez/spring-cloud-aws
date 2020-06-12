@@ -40,13 +40,13 @@ public class AwsParamStoreProperties implements Validator {
 	public static final String CONFIG_PREFIX = "aws.paramstore";
 
 	/**
-	 * Pattern used for checking prefix validity.
+	 * Pattern used for prefix validation.
 	 */
 	private static final Pattern PREFIX_PATTERN = Pattern
 			.compile("(/[a-zA-Z0-9.\\-_]+)*");
 
 	/**
-	 * Pattern used for checking profileSeparator validity.
+	 * Pattern used for profileSeparator validation.
 	 */
 	private static final Pattern PROFILE_SEPARATOR_PATTERN = Pattern
 			.compile("[a-zA-Z0-9.\\-_/]+");
@@ -80,22 +80,22 @@ public class AwsParamStoreProperties implements Validator {
 
 	@Override
 	public void validate(Object target, Errors errors) {
-		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "prefix", "field.required",
+		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "prefix", "NotEmpty",
 				"prefix should not be empty or null.");
-		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "defaultContext",
-				"field.required", "defaultContext should not be empty or null.");
-		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "profileSeparator",
-				"field.required", "profileSeparator should not be empty or null.");
+		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "defaultContext", "NotEmpty",
+				"defaultContext should not be empty or null.");
+		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "profileSeparator", "NotEmpty",
+				"profileSeparator should not be empty or null.");
 
 		AwsParamStoreProperties awsParamStoreProperties = (AwsParamStoreProperties) target;
 
 		if (!PREFIX_PATTERN.matcher(awsParamStoreProperties.getPrefix()).matches()) {
-			errors.rejectValue("prefix", "prefix.pattern.wrong",
+			errors.rejectValue("prefix", "Pattern",
 					"The prefix must have pattern of:  " + PREFIX_PATTERN.toString());
 		}
 		if (!PROFILE_SEPARATOR_PATTERN
 				.matcher(awsParamStoreProperties.getProfileSeparator()).matches()) {
-			errors.rejectValue("profileSeparator", "separator.pattern.wrong",
+			errors.rejectValue("profileSeparator", "Pattern",
 					"The profileSeparator must have pattern of:  "
 							+ PROFILE_SEPARATOR_PATTERN.toString());
 		}

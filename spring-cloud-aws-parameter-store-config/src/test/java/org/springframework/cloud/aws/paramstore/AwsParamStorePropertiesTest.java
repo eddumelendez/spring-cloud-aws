@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.aws.paramstore;
 
-import java.util.HashMap;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -31,71 +29,75 @@ import org.springframework.validation.Errors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for AwsParamStoreProperties validity.
+ * Tests for {@link AwsParamStoreProperties}.
  *
  * @author Matej Nedic
+ * @author Maciej Walkowiak
  */
 public class AwsParamStorePropertiesTest {
 
-	private static final HashMap ERROR_CODES = new HashMap() {
-		{
-			put(ErrorCode.PREF_NULL, "prefix should not be empty or null.");
-			put(ErrorCode.PREF_PATTERN_WRONG,
-					"The prefix must have pattern of:  (/[a-zA-Z0-9.\\-_]+)*");
-			put(ErrorCode.DC_NULL, "defaultContext should not be empty or null.");
-			put(ErrorCode.PS_NULL, "profileSeparator should not be empty or null.");
-			put(ErrorCode.PS_PATTERN_WRONG,
-					"The profileSeparator must have pattern of:  [a-zA-Z0-9.\\-_/]+");
-		}
-	};
-
 	@ParameterizedTest
-	@MethodSource("provideCase")
-	public void awsParamStoreProperties_ValidationFails(String prefix,
-			String defaultContext, String profileSeparator, String message) {
-		AwsParamStoreProperties properties = buildAwsParamStoreProperties(prefix,
-				defaultContext, profileSeparator);
+	@MethodSource("invalidProperties")
+	public void validationFails(AwsParamStoreProperties properties, String field,
+			String errorCode) {
 		Errors errors = new BeanPropertyBindingResult(properties, "properties");
+
 		properties.validate(properties, errors);
-		assertThat(errors.getAllErrors().stream()
-				.filter(error -> Objects.equals(error.getDefaultMessage(), message))
-				.findAny()).isNotEmpty();
+
+		assertThat(errors.getFieldError(field)).isNotNull();
+		assertThat(errors.getFieldError(field).getCode()).isEqualTo(errorCode);
 	}
 
 	@Test
-	void awsParamStoreProperties_ValidationSucceeds() {
-		AwsParamStoreProperties properties = buildAwsParamStoreProperties("/con", "app",
-				"_");
+	void validationSucceeds() {
+		AwsParamStoreProperties properties = new AwsParamStorePropertiesBuilder()
+				.withPrefix("/con").withDefaultContext("app").withProfileSeparator("_")
+				.build();
+
 		Errors errors = new BeanPropertyBindingResult(properties, "properties");
 		properties.validate(properties, errors);
+
 		assertThat(errors.getAllErrors()).isEmpty();
 	}
 
-	private static Stream<Arguments> provideCase() {
+	private static Stream<Arguments> invalidProperties() {
 		return Stream.of(
-				Arguments.of("", "application", "_",
-						ERROR_CODES.get(ErrorCode.PREF_NULL)),
-				Arguments.of("!.", "application", "_",
-						ERROR_CODES.get(ErrorCode.PREF_PATTERN_WRONG)),
-				Arguments.of("/config", "", "_", ERROR_CODES.get(ErrorCode.DC_NULL)),
-				Arguments.of("/config", "application", "",
-						ERROR_CODES.get(ErrorCode.PS_NULL)),
-				Arguments.of("/config", "application", "!_",
-						ERROR_CODES.get(ErrorCode.PS_PATTERN_WRONG)));
+				Arguments.of(new AwsParamStorePropertiesBuilder().withPrefix("").build(),
+						"prefix", "NotEmpty"),
+				Arguments.of(
+						new AwsParamStorePropertiesBuilder().withPrefix("!.").build(),
+						"prefix", "Pattern"),
+				Arguments.of(new AwsParamStorePropertiesBuilder().withDefaultContext("")
+						.build(), "defaultContext", "NotEmpty"),
+				Arguments.of(new AwsParamStorePropertiesBuilder().withProfileSeparator("")
+						.build(), "profileSeparator", "NotEmpty"),
+				Arguments.of(new AwsParamStorePropertiesBuilder()
+						.withProfileSeparator("!_").build(), "profileSeparator",
+						"Pattern"));
 	}
 
-	private static AwsParamStoreProperties buildAwsParamStoreProperties(String prefix,
-			String defaultContext, String profileSeparator) {
-		AwsParamStoreProperties awsParamStoreProperties = new AwsParamStoreProperties();
-		awsParamStoreProperties.setPrefix(prefix);
-		awsParamStoreProperties.setDefaultContext(defaultContext);
-		awsParamStoreProperties.setProfileSeparator(profileSeparator);
-		return awsParamStoreProperties;
-	}
+	private static class AwsParamStorePropertiesBuilder {
 
-	private enum ErrorCode {
+		private final AwsParamStoreProperties properties = new AwsParamStoreProperties();
 
-		PREF_NULL, PREF_PATTERN_WRONG, DC_NULL, PS_NULL, PS_PATTERN_WRONG
+		AwsParamStorePropertiesBuilder withPrefix(String prefix) {
+			this.properties.setPrefix(prefix);
+			return this;
+		}
+
+		AwsParamStorePropertiesBuilder withDefaultContext(String defaultContext) {
+			this.properties.setDefaultContext(defaultContext);
+			return this;
+		}
+
+		AwsParamStorePropertiesBuilder withProfileSeparator(String profileSeparator) {
+			this.properties.setProfileSeparator(profileSeparator);
+			return this;
+		}
+
+		AwsParamStoreProperties build() {
+			return this.properties;
+		}
 
 	}
 
