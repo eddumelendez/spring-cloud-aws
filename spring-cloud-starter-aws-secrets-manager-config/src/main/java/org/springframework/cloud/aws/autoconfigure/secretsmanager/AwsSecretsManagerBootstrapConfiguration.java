@@ -61,7 +61,7 @@ public class AwsSecretsManagerBootstrapConfiguration {
 				.withClientConfiguration(
 						SpringCloudClientConfiguration.getClientConfiguration());
 		return StringUtils.isNullOrEmpty(awsSecretsManagerProperties.getRegion())
-				? builder.withRegion(Regions.DEFAULT_REGION).build()
+				? builder.build()
 				: builder.withRegion(awsSecretsManagerProperties.getRegion()).build();
 	}
 

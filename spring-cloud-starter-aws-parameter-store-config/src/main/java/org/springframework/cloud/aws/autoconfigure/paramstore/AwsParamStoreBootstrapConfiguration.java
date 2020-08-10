@@ -62,7 +62,7 @@ public class AwsParamStoreBootstrapConfiguration {
 				.standard().withClientConfiguration(
 						SpringCloudClientConfiguration.getClientConfiguration());
 		return StringUtils.isNullOrEmpty(awsParamStoreProperties.getRegion())
-				? builder.withRegion(Regions.DEFAULT_REGION).build()
+				? builder.build()
 				: builder.withRegion(awsParamStoreProperties.getRegion()).build();
 	}
 
